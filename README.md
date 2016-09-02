@@ -1,124 +1,44 @@
-# karma-mocha
+# karma-mocha-runner
 
-[![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/karma-runner/karma-mocha)
+<!--[![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/cognivator/karma-mocha-runner)
  [![npm version](https://img.shields.io/npm/v/karma-mocha.svg?style=flat-square)](https://www.npmjs.com/package/karma-mocha) [![npm downloads](https://img.shields.io/npm/dm/karma-mocha.svg?style=flat-square)](https://www.npmjs.com/package/karma-mocha)
 
-[![Build Status](https://img.shields.io/travis/karma-runner/karma-mocha/master.svg?style=flat-square)](https://travis-ci.org/karma-runner/karma-mocha) [![Dependency Status](https://img.shields.io/david/karma-runner/karma-mocha.svg?style=flat-square)](https://david-dm.org/karma-runner/karma-mocha) [![devDependency Status](https://img.shields.io/david/dev/karma-runner/karma-mocha.svg?style=flat-square)](https://david-dm.org/karma-runner/karma-mocha#info=devDependencies)
+[![Build Status](https://img.shields.io/travis/karma-runner/karma-mocha/master.svg?style=flat-square)](https://travis-ci.org/karma-runner/karma-mocha) [![Dependency Status](https://img.shields.io/david/karma-runner/karma-mocha.svg?style=flat-square)](https://david-dm.org/karma-runner/karma-mocha) [![devDependency Status](https://img.shields.io/david/dev/karma-runner/karma-mocha.svg?style=flat-square)](https://david-dm.org/karma-runner/karma-mocha#info=devDependencies)-->
 
 > Adapter for the [Mocha](http://mochajs.org/) testing framework.
+> Forked from  [karma-mocha](https://github.com/karma-runner/karma-mocha) in order to add access to the mocha runner instance and its events.
 
-## Installation
+## Primary Documentation
 
-The easiest way is to keep `karma-mocha` as a devDependency in your `package.json`.
-```json
-{
-  "devDependencies": {
-    "karma-mocha": "~0.1"
+Please refer to the [karma-mocha](https://github.com/karma-runner/karma-mocha) site for documentation.
+
+## Access to the Mocha test runner instance
+
+The primary reason for this fork is to provide access to the Mocha test runner instance. With access to the runner, you gain the ability to listen to its [events](https://github.com/mochajs/mocha/blob/8cae7a34f0b6eafeb16567beb8852b827cc5956b/lib/runner.js#L47-L57).
+
+One possible use for these events is to help mitigate memory usage for large test suites. By handling the `suite end` and/or `test end` events, some of the mocha test suite context can be explicitly released in ways mocha itself does not.
+
+> _Inspired by this [mocha issue comment](https://github.com/mochajs/mocha/issues/1991#issuecomment-168248887)_
+
+```js
+var runner = getRunner(); // obtain the runner instance by some means... (TBD @@@)
+
+runner.on('suite end', function(suite) {
+  delete suite._afterAll;
+  delete suite._afterEach;
+  delete suite._beforeAll;
+  delete suite._beforeEach;
+  delete suite.ctx;
+  delete suite.suites;
+  delete suite.tests;
+});
+
+runner.on('test end', function(test) {
+  if (! test.async) {
+    delete test.ctx;
   }
-}
+});
 ```
 
-You can simple do it by:
-```bash
-npm install karma-mocha --save-dev
-```
-
-Instructions on how to install `karma` can be found [here.](http://karma-runner.github.io/0.12/intro/installation.html)
-
-## Configuration
-Following code shows the default configuration...
-```js
-// karma.conf.js
-module.exports = function(config) {
-  config.set({
-    frameworks: ['mocha'],
-
-    files: [
-      '*.js'
-    ]
-  });
-};
-```
-
-If you want to pass configuration options directly to mocha you can
-do this in the following way
-
-```js
-// karma.conf.js
-module.exports = function(config) {
-  config.set({
-    frameworks: ['mocha'],
-
-    files: [
-      '*.js'
-    ],
-
-    client: {
-      mocha: {
-        // change Karma's debug.html to the mocha web reporter
-        reporter: 'html',
-
-        // require specific files after Mocha is initialized
-        require: [require.resolve('bdd-lazy-var/bdd_lazy_var_global')],
-
-        // custom ui, defined in required file above
-        ui: 'bdd-lazy-var/global',
-      }
-    }
-  });
-};
-```
-
-If you want run only some tests matching a given pattern you can
-do this in the following way
-
-```sh
-karma start &
-karma run -- --grep=<pattern>
-```
-
-or
-
-```js
-module.exports = function(config) {
-  config.set({
-    ...
-    client: {
-      mocha:{
-        grep: '<pattern>',
-        ...
-      }
-      ...
-    }
-  });
-};
-```
-
-The `grep` argument is passed directly to mocha.
-
-## Internals
-
-On the end of each test `karma-mocha` passes to `karma` result object with fields:
-
-* `description` Test title.
-* `suite` List of titles of test suites.
-* `success` True if test is succeed, false otherwise.
-* `skipped` True if test is skipped.
-* `time` Test duration.
-* `log` List of errors.
-* `assertionErrors` List of additional error info: 
-    * `name` Error name.
-    * `message` Error message.
-    * `actual` Actual data in assertion, serialized to string.
-    * `expected` Expected data in assertion, serialized to string.
-    * `showDiff` True if it is configured by assertion to show diff.
-
-This object will be passed to test reporter.
 
 
-----
-
-For more information on Karma see the [homepage].
-
-
-[homepage]: http://karma-runner.github.com

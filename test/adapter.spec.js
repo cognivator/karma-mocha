@@ -322,11 +322,16 @@ describe('adapter mocha', function () {
   })
 
   describe('createMochaStartFn', function () {
+    var runner
+
     beforeEach(function () {
+      runner = new Emitter
+
       this.mockMocha = {
         grep: function () {
         },
         run: function () {
+          return runner
         }
       }
     })
@@ -369,6 +374,20 @@ describe('adapter mocha', function () {
       expect(function () {
         createMochaStartFn(that.mockMocha)({})
       }).to.not.throw()
+    })
+
+    it('should expose the mocha runner on the window namespace', function () {
+      var window = Function('return this;')()
+
+      createMochaStartFn(this.mockMocha)({})
+
+      expect(window.MOCHA_RUNNER).to.be.defined
+      expect(window.MOCHA_RUNNER).to.equal(runner)
+
+      runner.emit('end')
+
+      expect(window.MOCHA_RUNNER).not.to.be.defined
+
     })
   })
 

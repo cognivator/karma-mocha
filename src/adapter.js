@@ -187,7 +187,10 @@ var createMochaStartFn = function (mocha) {
       }
     }
 
-    mocha.run()
+    var runner = window.MOCHA_RUNNER = mocha.run()
+    runner.on('end', function () {
+      delete window.MOCHA_RUNNER
+    })
   }
 }
 

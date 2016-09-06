@@ -34,7 +34,8 @@ describe('adapter mocha', function () {
 
   describe('createMochaReporterConstructor', function () {
     beforeEach(function () {
-      this.karma = new Karma(function (method, args) { })
+      this.karma = new Karma(function (method, args) {
+      })
       this.karma.config = {
         mocha: {
           reporter: 'html'
@@ -65,7 +66,8 @@ describe('adapter mocha', function () {
     var runner, tc
 
     beforeEach(function () {
-      tc = new Karma(function (method, args) { })
+      tc = new Karma(function (method, args) {
+      })
       runner = new Emitter()
       var reporter = new (createMochaReporterConstructor(tc))(runner) // eslint-disable-line
     })
@@ -322,11 +324,16 @@ describe('adapter mocha', function () {
   })
 
   describe('createMochaStartFn', function () {
+    var runner
+
     beforeEach(function () {
+      runner = new Emitter()
+
       this.mockMocha = {
         grep: function () {
         },
         run: function () {
+          return runner
         }
       }
     })
@@ -369,6 +376,21 @@ describe('adapter mocha', function () {
       expect(function () {
         createMochaStartFn(that.mockMocha)({})
       }).to.not.throw()
+    })
+
+    it('should expose the mocha runner on the window namespace', function () {
+      /* eslint no-new-func: 0 */
+      var window = Function('return this;')()
+      /* eslint no-new-func: */
+
+      createMochaStartFn(this.mockMocha)({})
+
+      expect(window.MOCHA_RUNNER).to.be.defined
+      expect(window.MOCHA_RUNNER).to.equal(runner)
+
+      runner.emit('end')
+
+      expect(window.MOCHA_RUNNER).not.to.be.defined
     })
   })
 
@@ -455,7 +477,10 @@ describe('adapter mocha', function () {
       err.name = 'AssertionError'
       err.message = 'expected \'something\' to deeply equal \'something else\''
       err.showDiff = true
-      err.actual = {baz: 'baz', foo: null, bar: function () {}}
+      err.actual = {
+        baz: 'baz', foo: null, bar: function () {
+        }
+      }
       err.expected = {baz: 42, foo: undefined}
 
       var error = processAssertionError(err)
@@ -480,7 +505,10 @@ describe('adapter mocha', function () {
       var err = new Error()
       err.message = 'expected \'something\' to deeply equal \'something else\''
       err.showDiff = false
-      err.actual = {baz: 'baz', foo: null, bar: function () {}}
+      err.actual = {
+        baz: 'baz', foo: null, bar: function () {
+        }
+      }
       err.expected = {baz: 42, foo: undefined}
 
       var error = processAssertionError(err)
